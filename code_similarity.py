@@ -3,6 +3,7 @@
 from sys import argv
 from os import walk, path
 import requests
+import colorama
 import hashlib
 
 params = {
@@ -12,9 +13,12 @@ params = {
     "HIDDEN": False
 }
 
-def log(message, level="NOTIFY"):
+def log(message, level="NOTIFY", color=None):
     if params['VERBOSE'] or level not in ['NOTIFY']:
-        print(message)
+        if color is not None:
+            print(color+message)
+        else:
+            print(message)
 
 def usage():
     print("%s : filename_url [files...]" %argv[0])
@@ -55,10 +59,10 @@ def get_file(parameter):
             with open(parameter) as f:
                 return f.read()
         except IsADirectoryError as e:
-            log('%s is a directory' %parameter, 'WARNING')
+            log('%s is a directory' %parameter, 'WARNING', colorama.Fore.YELLOW)
             return None
         except UnicodeDecodeError as e:
-            log('%s seems to be a binary file' %parameter, 'WARNING')
+            log('%s seems to be a binary file' %parameter, 'WARNING', colorama.Fore.YELLOW)
     return output
 
 def get_files(directory):
@@ -115,7 +119,6 @@ def verify(input_file, output_files):
                 log("\tCollisions : %s/%s (%s%%)" %(collisions, len(hashes_a), collision_percentage))
                 if collision_percentage > biggest_collision[1]:
                     biggest_collision = [filename, collision_percentage]
-    log("[Biggest collision is %s (%s%%)]" %(biggest_collision[0], biggest_collision[1]))
     return biggest_collision
 
 def check_similarity(input_name, outputs):
@@ -127,14 +130,14 @@ def check_similarity(input_name, outputs):
         for name in outputs:
             output_files.extend(get_files(name))
         for input_file in input_files:
-            log('Checking %s for collisions' %input_file)
+            log('Checking %s for collisions' %input_file, color=colorama.Fore.MAGENTA)
             file_collisions = verify(input_file, output_files)
             if file_collisions:
                 collisions[input_file] = file_collisions
                 collisions_array.append([input_file, file_collisions[0], file_collisions[1]])
         return collisions, collisions_array
     else:
-        log('Checking %s for collisions' %input_name)
+        log('Checking %s for collisions' %input_name, color=colorama.Fore.MAGENTA)
         collision = verify(input_name, outputs)
         if collision is not None:
             return {input_name: collision}, [[input_name, collision[0], collision[1]]]
@@ -150,14 +153,19 @@ def report(collision_obj, collision_array):
     total_similarity = 0
     for output in sorted_array:
         if output[2] > 0:
-            log('%s %%\n\t%s\n\t~ %s' %(output[2], output[0], output[1]), 'LOG')
+            color = colorama.Fore.CYAN
+            if output[2] > 75:
+                color = colorama.Fore.RED
+            log('%s %%' %output[2], 'LOG', color)
+            log('\t%s\n\t~ %s' %(output[0], output[1]), 'LOG')
             total_similarity += output[2]
     total_similarity = total_similarity / len(sorted_array)
-    log('\nTotal Similarity : %s% %' %total_similarity, 'LOG')
+    log('\nTotal Similarity : %s %%' %total_similarity, 'LOG', colorama.Fore.GREEN)
 
 def main():
     if len(argv) < 2:
         return usage()
+    colorama.init(autoreset=True)
     input_name, outputs = parse_params()
     output = check_similarity(input_name, outputs)
     if output is not None:
