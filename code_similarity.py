@@ -146,11 +146,15 @@ def report(collision_obj, collision_array):
     def getKey(item):
         return item[2]
     sorted_array = sorted(collision_array, key=getKey)
-    sorted_array.reverse()
+#    sorted_array.reverse()
+    total_similarity = 0
     for output in sorted_array:
         if output[2] > 0:
-            log("%s%% ~\n\t%s (%s)" %(output[2], output[0], output[1]), 'LOG')
-            
+            log('%s %%\n\t%s\n\t~ %s' %(output[2], output[0], output[1]), 'LOG')
+            total_similarity += output[2]
+    total_similarity = total_similarity / len(sorted_array)
+    log('\nTotal Similarity : %s% %' %total_similarity, 'LOG')
+
 def main():
     if len(argv) < 2:
         return usage()
