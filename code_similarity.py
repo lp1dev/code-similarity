@@ -10,7 +10,8 @@ params = {
     "VERBOSE": False,
     "RECURSIVE": False,
     "DIRECTORY": False,
-    "HIDDEN": False
+    "HIDDEN": False,
+    "EXTENSIONS": []
 }
 
 def log(message, level="NOTIFY", color=None):
@@ -38,6 +39,8 @@ def parse_params():
                 params['VERBOSE'] = True
             elif '-d' in param:
                 params['DIRECTORY'] = True
+            elif '-ext=' in param:
+                params['EXTENSIONS'] = param.replace('-ext=', '').split(',')
         else:
             if filename is None:
                 filename = param
@@ -70,7 +73,10 @@ def get_files(directory):
     for (dirpath, dirnames, filenames) in walk(directory):
         for filename in filenames:
             if not filename.startswith('.') or params['HIDDEN'] is True:
-                f.append(path.join(dirpath, filename))
+                if len(params['EXTENSIONS']):
+                    for extension in params['EXTENSIONS']:
+                        if filename.endswith(extension):
+                            f.append(path.join(dirpath, filename))
         for dirname in dirnames:
             if not dirname.startswith('.') or params['HIDDEN'] is True:
                 f.extend(get_files(path.join(dirpath, dirname)))
